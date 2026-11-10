@@ -10,5 +10,9 @@ export default defineConfig({
       "cloudflare:workers": fileURLToPath(new URL("./tests/fakes/cloudflareWorkers.ts", import.meta.url)),
     },
   },
-  test: { dir: "tests" },
+  test: {
+    dir: "tests",
+    // list every source file, also the ones no test imports (those show 0 %)
+    coverage: { include: ["client/**/*.{ts,tsx}", "server/**/*.ts", "shared/**/*.ts"] },
+  },
 });
