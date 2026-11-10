@@ -1,6 +1,8 @@
-// QA report: what report.json holds (rules, findings, agent trace). zod checks the file when it is loaded.
+// QA report: what report.json holds (rules, findings, agent trace), and how findings are made from check results.
 import { z } from "zod";
-import { OPERATORS, RequirementSchema } from "./requirement";
+import { check } from "./checker";
+import type { ElementFacts } from "./elementFacts";
+import { type Requirement, RequirementSchema } from "./requirement";
 import { formatFact } from "./units";
 
 export const SEVERITIES = ["major", "minor"] as const;
@@ -16,7 +18,7 @@ export const FindingSchema = z.object({
   quantity: z.string(),
   observed: z.number(),
   limit: z.number(),
-  op: z.enum(OPERATORS),
+  op: RequirementSchema.shape.op,
   severity: z.enum(SEVERITIES),
 });
 export type Finding = z.infer<typeof FindingSchema>;
@@ -41,6 +43,57 @@ export const ReportSchema = z.object({
   trace: z.array(TraceEntrySchema),
 });
 export type Report = z.infer<typeof ReportSchema>;
+
+/** A shortfall of 10 % of the limit or more is major; less is minor. */
+export const MAJOR_SHORTFALL = 0.1;
+
+export function severityOf(observed: number, limit: number): Severity {
+  return Math.abs(limit - observed) / limit >= MAJOR_SHORTFALL - 1e-9 ? "major" : "minor";
+}
+
+/** Runs every requirement on the facts and turns each failure into a numbered finding. */
+export function buildReport(input: {
+  sampleId: string;
+  rulesBy: string;
+  requirements: Requirement[];
+  facts: ElementFacts[];
+  trace?: TraceEntry[];
+  now?: Date;
+}): Report {
+  const byId = new Map(input.facts.map((f) => [f.globalId, f]));
+  const findings: Finding[] = [];
+  let notEvaluated = 0;
+  for (const req of input.requirements) {
+    for (const r of check(req, input.facts)) {
+      if (r.status === "not_evaluated") notEvaluated++;
+      if (r.status !== "failed" || r.observed === null) continue;
+      const f = byId.get(r.globalId)!;
+      findings.push({
+        id: `F-${String(findings.length + 1).padStart(2, "0")}`,
+        requirementId: req.id,
+        globalId: f.globalId,
+        element: f.name ?? f.longName ?? f.globalId,
+        ifcType: f.ifcType,
+        storey: f.storey,
+        quantity: req.quantity,
+        observed: r.observed,
+        limit: r.limit,
+        op: req.op,
+        severity: severityOf(r.observed, r.limit),
+      });
+    }
+  }
+  return {
+    version: 1,
+    sampleId: input.sampleId,
+    generatedAt: (input.now ?? new Date()).toISOString(),
+    rulesBy: input.rulesBy,
+    requirements: input.requirements,
+    findings,
+    notEvaluated,
+    trace: input.trace ?? [],
+  };
+}
 
 const OP_TEXT = { ">=": "at least", "<=": "at most", ">": "more than", "<": "less than" } as const;
 

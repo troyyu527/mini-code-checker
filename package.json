@@ -9,7 +9,8 @@
                     "preview":  "vite preview",
                     "lint":  "tsc --noEmit",
                     "test":  "vitest run",
-                    "facts":  "tsx server/cli/printFacts.ts"
+                    "facts":  "tsx server/cli/printFacts.ts",
+                    "build:report":  "tsx server/cli/buildReport.ts"
                 },
     "dependencies":  {
                          "react":  "^19.3.1",
