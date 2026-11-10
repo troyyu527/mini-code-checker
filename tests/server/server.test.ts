@@ -46,3 +46,29 @@ describe("Worker routes", () => {
     expect(asked).toEqual(["s-12345678"]);
   });
 });
+
+describe("CORS", () => {
+  const from = (origin: string, init: RequestInit = {}) =>
+    handle(new Request("http://worker/api/health", { ...init, headers: { Origin: origin, ...init.headers } }), env);
+
+  it("an allowed origin gets the CORS headers", async () => {
+    const res = await from("http://localhost:5173");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:5173");
+    expect(res.headers.get("Vary")).toBe("Origin");
+  });
+  it("an origin that is not on the list is 403", async () => {
+    expect((await from("https://evil.example")).status).toBe(403);
+  });
+  it("answers the preflight with 204 and the allowed methods and headers", async () => {
+    const res = await from("http://localhost:5173", { method: "OPTIONS", headers: { "Access-Control-Request-Method": "POST" } });
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Methods")).toBe("GET, POST, OPTIONS");
+    expect(res.headers.get("Access-Control-Allow-Headers")).toBe("Content-Type");
+  });
+  it("a request without Origin (curl, the CLI) gets no CORS headers and is not refused", async () => {
+    const res = await get("/api/health");
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBeNull();
+  });
+});

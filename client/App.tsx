@@ -1,8 +1,10 @@
-// App shell: header with the API status, tabs on the left, the 3D view and properties on the right.
-import { lazy, Suspense, useEffect } from "react";
+// App shell: header with the API status, tabs on the left (Report, Assistant), the 3D view and properties on the right.
+import { lazy, Suspense, useEffect, useState } from "react";
 import { APP_TITLE } from "@shared/app";
+import { ChatPanel } from "./components/ChatPanel";
 import { PropertiesPanel } from "./components/PropertiesPanel";
 import { ReportPage } from "./components/ReportPage";
+import type { ApiClient } from "./services/apiClient";
 import type { ReportLoader } from "./services/reportLoader";
 import { useReportStore } from "./state/reportStore";
 import { TABS, useUiStore } from "./state/uiStore";
@@ -24,9 +26,21 @@ function ApiBadge({ status }: { status: ApiStatus }) {
   );
 }
 
-export function App({ loadReport }: { loadReport: ReportLoader }) {
+export function App({ api, loadReport }: { api: ApiClient; loadReport: ReportLoader }) {
+  const [apiStatus, setApiStatus] = useState<ApiStatus>("checking");
   const tab = useUiStore((s) => s.tab);
   const setTab = useUiStore((s) => s.setTab);
+
+  useEffect(() => {
+    let live = true;
+    api
+      .health()
+      .then((h) => live && setApiStatus(h.ok ? "ok" : "down"))
+      .catch(() => live && setApiStatus("down"));
+    return () => {
+      live = false;
+    };
+  }, [api]);
 
   useEffect(() => {
     let live = true; // set to false by the cleanup: an answer that arrives later is ignored
@@ -51,7 +65,7 @@ export function App({ loadReport }: { loadReport: ReportLoader }) {
           <h1 className="text-lg font-semibold">{APP_TITLE}</h1>
           <p className="text-xs text-muted">One-storey office · NYC Building Code checks</p>
         </div>
-        <ApiBadge status="checking" />
+        <ApiBadge status={apiStatus} />
       </header>
       <main className="flex min-h-0 flex-1 flex-col md:flex-row">
         <section className="flex min-h-0 flex-col border-line md:w-[28rem] md:border-r">
@@ -69,7 +83,7 @@ export function App({ loadReport }: { loadReport: ReportLoader }) {
             ))}
           </nav>
           <div className="min-h-0 flex-1 overflow-hidden">
-            {tab === "Report" ? <ReportPage /> : <p className="p-4 text-sm text-muted">The assistant comes here (lesson 33).</p>}
+            {tab === "Report" ? <ReportPage /> : <ChatPanel api={api} />}
           </div>
         </section>
         <section className="flex min-h-[24rem] flex-1 flex-col">
