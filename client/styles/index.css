@@ -1,0 +1,27 @@
+@import "tailwindcss";
+
+/* Colour names used in class names, e.g. bg-panel, text-muted, border-line, bg-major. */
+@theme {
+  --color-page: #0f1419;
+  --color-panel: #171d24;
+  --color-line: #2a333d;
+  --color-text: #e6edf3;
+  --color-muted: #8b98a5;
+  --color-accent: #3b82f6;
+  --color-major: #ef4444;
+  --color-minor: #f59e0b;
+  --color-ok: #22c55e;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--color-page);
+  color: var(--color-text);
+  font-family: system-ui, sans-serif;
+}
