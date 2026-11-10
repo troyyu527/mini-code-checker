@@ -5,10 +5,9 @@ import { writeFileSync } from "node:fs";
 import { buildReport, type Report, ReportSchema } from "@shared/report";
 import { buildQaGraph, runQa } from "../agents/qa/graph";
 import { planTopics } from "../agents/qa/topics";
-import { embeddingConfig } from "../config";
+import { aiPlatform } from "../services/aiPlatform";
 import { createCodeSearch } from "../services/codeSearch";
-import { createOpenAiCompatClient, createOpenAiCompatEmbedder, meteredLlm } from "../services/llm";
-import { createD1VectorIndex } from "../services/vectorIndex";
+import { meteredLlm } from "../services/llm";
 import { HAND_RULES } from "./handRules";
 import { readModel, SAMPLE_ID } from "./ifc";
 import { openBindings } from "./platform";
@@ -19,10 +18,9 @@ const model = await readModel();
 async function aiReport(): Promise<Report> {
   const { env, dispose } = await openBindings();
   try {
-    const llmModel = env.OLLAMA_MODEL!;
-    const llm = meteredLlm(createOpenAiCompatClient({ baseUrl: env.OLLAMA_BASE_URL!, apiKey: env.OLLAMA_API_KEY ?? "ollama", model: llmModel }));
-    const search = createCodeSearch({ db: env.DB, index: createD1VectorIndex(env.DB), embedder: createOpenAiCompatEmbedder(embeddingConfig(env)) });
-    const graph = buildQaGraph({ llm, search, model: llmModel, sampleId: SAMPLE_ID });
+    const ai = aiPlatform(env);
+    const llm = meteredLlm(ai.llm);
+    const graph = buildQaGraph({ llm, search: createCodeSearch({ db: env.DB, index: ai.index, embedder: ai.embedder }), model: ai.model, sampleId: SAMPLE_ID });
     const t = Date.now();
     const report = await runQa(graph, planTopics(model.facts), model.facts, (e) => console.log(`  ${e.agent.padEnd(11)} ${e.summary}`));
     const u = llm.usage();

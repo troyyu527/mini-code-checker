@@ -1,4 +1,4 @@
-// LLM access: one small interface and its OpenAI-compatible implementation (Ollama locally). Lesson 32 adds Workers AI.
+// LLM access: one small interface, with an Ollama (OpenAI-compatible) and a Workers AI implementation.
 // The agents only know LlmClient, so tests can pass a fake one and nothing else changes.
 
 export interface ChatMessage {
@@ -39,6 +39,27 @@ export function createOpenAiCompatClient(opts: { baseUrl: string; apiKey: string
   };
 }
 
+/**
+ * A Workers AI chat model through the AI binding. Qwen3 "thinks" before answering unless the system message ends
+ * with /no_think; the thinking would cost many times the answer's tokens.
+ */
+export function createWorkersAiClient(ai: Ai, model = "@cf/qwen/qwen3-30b-a3b-fp8"): LlmClient {
+  return {
+    async chat(messages) {
+      const [first, ...rest] = messages;
+      const sent = first?.role === "system" ? [{ ...first, content: `${first.content}\n/no_think` }, ...rest] : messages;
+      const body = (await ai.run(model as keyof AiModels, { messages: sent, temperature: 0, max_tokens: 1024 } as never)) as unknown as {
+        choices: { message: { content?: string | null } }[];
+        usage?: { prompt_tokens?: number; completion_tokens?: number };
+      };
+      return {
+        content: (body.choices[0]?.message.content ?? "").trim(),
+        usage: { inputTokens: body.usage?.prompt_tokens ?? 0, outputTokens: body.usage?.completion_tokens ?? 0 },
+      };
+    },
+  };
+}
+
 /** Wraps a client and adds up the usage of every call that goes through it. */
 export function meteredLlm(llm: LlmClient): LlmClient & { usage(): Usage & { llmCalls: number } } {
   const total = { llmCalls: 0, inputTokens: 0, outputTokens: 0 };
@@ -72,6 +93,19 @@ export function createOpenAiCompatEmbedder(opts: { baseUrl: string; apiKey: stri
       if (!res.ok) throw new Error(`Embeddings HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
       const body = (await res.json()) as { data: { index: number; embedding: number[] }[] };
       return [...body.data].sort((a, b) => a.index - b.index).map((d) => d.embedding);
+    },
+  };
+}
+
+export function createWorkersAiEmbedder(ai: Ai, model = "@cf/baai/bge-small-en-v1.5"): Embedder {
+  return {
+    async embed(texts) {
+      const out: number[][] = [];
+      for (let i = 0; i < texts.length; i += 100) {
+        const res = (await ai.run(model as keyof AiModels, { text: texts.slice(i, i + 100) } as never)) as unknown as { data: number[][] };
+        out.push(...res.data);
+      }
+      return out;
     },
   };
 }

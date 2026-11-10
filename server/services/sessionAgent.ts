@@ -1,15 +1,15 @@
-// SessionAgent Durable Object: one per visitor session. Runs the chat graph and streams each agent step to the
-// browser as a server-sent event. (Lesson 32 adds the budget guard and the choice between Ollama and Workers AI.)
+// SessionAgent Durable Object: one per visitor session. Asks the budget guard, runs the chat graph, and streams
+// each agent step to the browser as a server-sent event.
 import { AsyncLocalStorage } from "node:async_hooks";
 import { DurableObject } from "cloudflare:workers";
 import { AsyncLocalStorageProviderSingleton } from "@langchain/core/singletons";
 import { type ChatRequest, encodeEvent, type StreamEvent } from "@shared/contracts";
 import { buildChatGraph, runChat, toResponse } from "../agents/chat/graph";
-import { embeddingConfig, type Env } from "../config";
+import type { Env } from "../config";
+import { aiPlatform } from "./aiPlatform";
 import { createCodeSearch } from "./codeSearch";
-import { createOpenAiCompatClient, createOpenAiCompatEmbedder, meteredLlm } from "./llm";
+import { meteredLlm } from "./llm";
 import { getFacts, getFindings } from "./modelData";
-import { createD1VectorIndex } from "./vectorIndex";
 
 // Wrangler bundles LangGraph's browser build, which does not set this up; LangGraph needs it to track its runs.
 AsyncLocalStorageProviderSingleton.initializeGlobalInstance(new AsyncLocalStorage());
@@ -34,16 +34,22 @@ export function eventStream(run: (send: Send) => Promise<void>): ReadableStream<
 export class SessionAgent extends DurableObject<Env> {
   chat(req: ChatRequest): ReadableStream<Uint8Array> {
     return eventStream(async (send) => {
-      const env = this.env;
-      const llm = meteredLlm(createOpenAiCompatClient({ baseUrl: env.OLLAMA_BASE_URL!, apiKey: env.OLLAMA_API_KEY ?? "ollama", model: env.OLLAMA_MODEL! }));
+      const budget = this.env.BUDGET.get(this.env.BUDGET.idFromName("global"));
+      const gate = await budget.reserve(req.sessionId);
+      if (!gate.ok) return send({ type: "error", error: gate.notice, notice: true });
+
+      const ai = aiPlatform(this.env);
+      const llm = meteredLlm(ai.llm);
       const graph = buildChatGraph({
         llm,
-        search: createCodeSearch({ db: env.DB, index: createD1VectorIndex(env.DB), embedder: createOpenAiCompatEmbedder(embeddingConfig(env)) }),
-        facts: () => getFacts(env.DB),
-        findings: (ids) => getFindings(env.DB, ids),
+        search: createCodeSearch({ db: this.env.DB, index: ai.index, embedder: ai.embedder }),
+        facts: () => getFacts(this.env.DB),
+        findings: (ids) => getFindings(this.env.DB, ids),
       });
       const state = await runChat(graph, crypto.randomUUID(), req.message, (step) => send({ type: "trace", step }));
-      send({ type: "result", result: toResponse(state, llm.usage()) });
+      const usage = llm.usage();
+      await budget.record(usage.inputTokens + usage.outputTokens);
+      send({ type: "result", result: toResponse(state, usage) });
     });
   }
 }

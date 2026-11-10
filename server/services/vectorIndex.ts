@@ -1,4 +1,4 @@
-// Vector search over the clauses: one interface and a local D1 table. Lesson 39 adds Cloudflare Vectorize.
+// Vector search over the clauses: one interface, a local D1 table and Cloudflare Vectorize.
 
 export interface VectorIndex {
   upsert(items: { id: string; vector: number[] }[]): Promise<void>;
@@ -44,6 +44,24 @@ export function createD1VectorIndex(db: D1Database): VectorIndex {
         .map((r) => ({ id: r.id, score: dot(q, r.vector) }))
         .sort((a, b) => b.score - a.score)
         .slice(0, topK);
+    },
+  };
+}
+
+/** Cloud: Vectorize (cosine, 384 dimensions). Writes are applied a little later, not at once. */
+export function createVectorizeIndex(index: Vectorize): VectorIndex {
+  return {
+    async count() {
+      return (await index.describe()).vectorCount;
+    },
+    async upsert(items) {
+      for (let i = 0; i < items.length; i += 500) {
+        await index.upsert(items.slice(i, i + 500).map((it) => ({ id: it.id, values: it.vector })));
+      }
+    },
+    async query(vector, topK) {
+      const { matches } = await index.query(vector, { topK: Math.min(topK, 50) });
+      return matches.map((m) => ({ id: m.id, score: m.score }));
     },
   };
 }

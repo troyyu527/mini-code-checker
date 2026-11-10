@@ -5,6 +5,7 @@ import { codeSearch } from "./routes/codeSearch";
 import { health } from "./routes/health";
 
 // Durable Object classes must be exported from the entry file
+export { BudgetGuard } from "./services/budgetGuard";
 export { SessionAgent } from "./services/sessionAgent";
 
 async function route(request: Request, env: Env, config: Config): Promise<Response> {

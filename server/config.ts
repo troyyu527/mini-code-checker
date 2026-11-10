@@ -1,4 +1,5 @@
 // Worker configuration: the only file that knows the names of the bindings and settings.
+import type { BudgetGuard } from "./services/budgetGuard";
 import type { SessionAgent } from "./services/sessionAgent";
 
 /** Bindings and vars from wrangler.jsonc, plus .env locally / secrets when deployed. */
@@ -6,10 +7,17 @@ export interface Env {
   ALLOWED_ORIGINS: string;
   DB: D1Database;
   SESSION: DurableObjectNamespace<SessionAgent>;
+  BUDGET: DurableObjectNamespace<BudgetGuard>;
+  /** "ollama" (local) or "workers-ai" (deployed). */
+  AI_PROVIDER: string;
+  AI?: Ai;
+  CODE_INDEX?: Vectorize;
   OLLAMA_BASE_URL?: string;
   OLLAMA_API_KEY?: string;
   OLLAMA_MODEL?: string;
   OLLAMA_EMBEDDING_MODEL?: string;
+  DAILY_TOKEN_LIMIT?: string;
+  SESSION_MESSAGE_LIMIT?: string;
 }
 
 export const VERSION = "0.1.0";
@@ -25,11 +33,17 @@ export function readConfig(env: Pick<Env, "ALLOWED_ORIGINS">): Config {
     allowedOrigins: env.ALLOWED_ORIGINS.split(",").map((o) => o.trim()).filter(Boolean),
   };
 }
-/** The local embedding model (Ollama). Lesson 32 chooses between Ollama and Workers AI in one place. */
-export function embeddingConfig(env: Pick<Env, "OLLAMA_BASE_URL" | "OLLAMA_API_KEY" | "OLLAMA_EMBEDDING_MODEL">) {
-  return {
-    baseUrl: env.OLLAMA_BASE_URL ?? "http://localhost:11434/v1",
-    apiKey: env.OLLAMA_API_KEY ?? "ollama",
-    model: env.OLLAMA_EMBEDDING_MODEL ?? "hf.co/CompendiumLabs/bge-small-en-v1.5-gguf:Q8_0",
-  };
+
+export interface Limits {
+  /** LLM tokens (input + output) per day for all visitors together. */
+  dailyTokens: number;
+  /** Chat messages per session per day. */
+  sessionMessages: number;
+}
+
+export const LIMITS: Limits = { dailyTokens: 200_000, sessionMessages: 20 };
+
+export function readLimits(env: Pick<Env, "DAILY_TOKEN_LIMIT" | "SESSION_MESSAGE_LIMIT">): Limits {
+  const n = (v: string | undefined, d: number) => (v && Number.isFinite(Number(v)) ? Number(v) : d);
+  return { dailyTokens: n(env.DAILY_TOKEN_LIMIT, LIMITS.dailyTokens), sessionMessages: n(env.SESSION_MESSAGE_LIMIT, LIMITS.sessionMessages) };
 }
