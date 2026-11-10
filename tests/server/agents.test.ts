@@ -6,6 +6,8 @@ import { makeRequirement } from "@shared/requirement";
 import { buildChatGraph, runChat } from "../../server/agents/chat/graph";
 import { mentionedElements } from "../../server/agents/chat/supervisor";
 import { DONT_KNOW } from "../../server/agents/chat/writer";
+import { repairQuote, reviewRule } from "../../server/agents/qa/reviewer";
+import { TOPICS } from "../../server/agents/qa/topics";
 import type { CodeSearch } from "../../server/services/codeSearch";
 import type { FindingWithRule } from "../../server/services/modelData";
 import { scriptedLlm } from "../fakes/llm";
@@ -69,3 +71,25 @@ describe("chat graph", () => {
     expect(llm.calls).toHaveLength(3);
   });
 });
+
+describe("reviewer", () => {
+  const topic = TOPICS.find((t) => t.id === "ceiling_height")!;
+  const body = "1208.2 Minimum ceiling heights. Occupiable spaces and corridors shall have a ceiling height of not less than 7 feet 6 inches (2286 mm). Bathrooms …";
+  const passages = [{ chunkId: "S024#033", section: "1208.2", provisions: ["1208.2"], page: 13, sourceUrl: "https://example.org", body }];
+  const base = { title: "Ceiling", op: ">=" as const, value: 90, unit: "in" as const, chunkId: "S024#033", excludeObjectTypes: [] };
+
+  it("repairs a quote with a copying slip to the exact sentence", () => {
+    const r = reviewRule({ ...base, quote: "Occiupable spaces and corridors shall have a ceiling height of not less than 7 feet 6 inches (2286 mm)." }, topic, passages);
+    expect(r).toMatchObject({ problems: [], repaired: true });
+    expect(body.includes(r.quote)).toBe(true);
+  });
+  it("rejects an invented quote", () => {
+    expect(repairQuote("Rooms must be tall.", body)).toBeNull();
+    expect(reviewRule({ ...base, quote: "Rooms must be tall." }, topic, passages).problems[0]).toMatch(/word for word/);
+  });
+  it("rejects a value that is not in the quote, and an implausible limit", () => {
+    const r = reviewRule({ ...base, value: 9, quote: "Occupiable spaces and corridors shall have a ceiling height of not less than 7 feet 6 inches (2286 mm)." }, topic, passages);
+    expect(r.problems.join(" ")).toMatch(/does not contain the value 9 in.*not a plausible/);
+  });
+});
+

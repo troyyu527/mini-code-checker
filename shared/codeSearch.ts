@@ -54,6 +54,22 @@ export function fuseRanks(lists: Record<string, string[]>, k = 60): { id: string
   return [...out.values()].sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 }
 
+/**
+ * A chunk can hold several provisions ("1010.1.1.2 … 1010.1.1.3 …"). The one a quote belongs to is the last
+ * provision number written before the quote. Falls back to the first provision.
+ */
+export function provisionOf(body: string, quote: string, provisions: string[]): string | null {
+  const at = body.replace(/\s+/g, " ").toLowerCase().indexOf(quote.replace(/\s+/g, " ").toLowerCase());
+  if (at < 0) return provisions[0] ?? null;
+  const flat = body.replace(/\s+/g, " ");
+  let best: { p: string; i: number } | null = null;
+  for (const p of provisions) {
+    const i = flat.lastIndexOf(`${p} `, at);
+    if (i >= 0 && (!best || i > best.i)) best = { p, i };
+  }
+  return best?.p ?? provisions[0] ?? null;
+}
+
 /** Lower-case query words without stopwords and without a plural "s" (doors → door). */
 export function queryTerms(q: string): string[] {
   const words = (q.toLowerCase().match(/[a-z0-9]+(?:\.\d+)*/g) ?? []).filter((w) => w.length > 1 && !STOPWORDS.has(w));
