@@ -53,3 +53,25 @@ export function meteredLlm(llm: LlmClient): LlmClient & { usage(): Usage & { llm
     usage: () => ({ ...total }),
   };
 }
+
+/** Text → vectors (bge-small-en-v1.5: 384 numbers per text). */
+export interface Embedder {
+  embed(texts: string[]): Promise<number[][]>;
+}
+
+export function createOpenAiCompatEmbedder(opts: { baseUrl: string; apiKey: string; model: string }, fetchFn: typeof fetch = fetch): Embedder {
+  const url = `${opts.baseUrl.replace(/\/+$/, "")}/embeddings`;
+  return {
+    async embed(texts) {
+      if (!texts.length) return [];
+      const res = await fetchFn(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${opts.apiKey}` },
+        body: JSON.stringify({ model: opts.model, input: texts }),
+      });
+      if (!res.ok) throw new Error(`Embeddings HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      const body = (await res.json()) as { data: { index: number; embedding: number[] }[] };
+      return [...body.data].sort((a, b) => a.index - b.index).map((d) => d.embedding);
+    },
+  };
+}

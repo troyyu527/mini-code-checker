@@ -27,8 +27,7 @@ describe("Worker routes", () => {
     expect(res.status).toBe(400);
     expect(((await res.json()) as { error: string }).error).toMatch(/2 characters/);
   });
-  it("k is turned into a number and has a default", async () => {
-    expect((await get("/api/code/search?q=door width")).status).toBe(200);
+  it("k above 10 is refused (a valid search is tested in codeSearch.test.ts with a fake embedder)", async () => {
     expect((await get("/api/code/search?q=door&k=99")).status).toBe(400);
   });
   it("a chat body that is not JSON is 400", async () => {

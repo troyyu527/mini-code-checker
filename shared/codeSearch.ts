@@ -1,4 +1,4 @@
-// Code search: the hit shape, and pure helpers for keyword queries and short verbatim quotes.
+// Code search: the hit shape, and pure helpers for keyword queries, rank fusion and short verbatim quotes.
 import { z } from "zod";
 
 export interface CodeHit {
@@ -38,6 +38,20 @@ export function ftsQuery(q: string): string {
   const words = [...new Set(rest.match(/[a-z0-9]+/g) ?? [])].filter((w) => w.length > 1 && !STOPWORDS.has(w));
   const terms = [...provisions.map((p) => `"${p.split(".").join(" ")}"`), ...words.map((w) => `"${w}"`)];
   return terms.join(" OR ");
+}
+
+/** Reciprocal rank fusion: each list gives 1 / (k + rank) to each id; ids found by both lists rise to the top. */
+export function fuseRanks(lists: Record<string, string[]>, k = 60): { id: string; score: number; foundBy: string[] }[] {
+  const out = new Map<string, { id: string; score: number; foundBy: string[] }>();
+  for (const [name, ids] of Object.entries(lists)) {
+    ids.forEach((id, i) => {
+      const e = out.get(id) ?? { id, score: 0, foundBy: [] };
+      e.score += 1 / (k + i + 1);
+      e.foundBy.push(name);
+      out.set(id, e);
+    });
+  }
+  return [...out.values()].sort((a, b) => b.score - a.score || a.id.localeCompare(b.id));
 }
 
 /** Lower-case query words without stopwords and without a plural "s" (doors → door). */

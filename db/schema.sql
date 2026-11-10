@@ -37,3 +37,9 @@ CREATE TABLE IF NOT EXISTS code_chunks (
 
 -- Keyword index (SQLite FTS5) over the same clauses.
 CREATE VIRTUAL TABLE IF NOT EXISTS code_chunks_fts USING fts5 (id UNINDEXED, heading, provisions, body);
+
+-- Local vector index (deployed: Vectorize): one embedding per clause, as JSON text.
+CREATE TABLE IF NOT EXISTS code_vectors (
+  id     TEXT PRIMARY KEY,
+  vector TEXT NOT NULL
+);

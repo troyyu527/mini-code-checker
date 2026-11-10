@@ -1,5 +1,7 @@
-// Code search over the clauses in D1: rows + an FTS5 keyword index. Lesson 27 adds vectors and fusion.
-import { type CodeHit, ftsQuery, quoteFor } from "@shared/codeSearch";
+// Code RAG: stores the clauses in D1 (rows + FTS5 + vectors) and searches them by keywords and by meaning.
+import { type CodeHit, ftsQuery, fuseRanks, quoteFor } from "@shared/codeSearch";
+import type { Embedder } from "./llm";
+import type { VectorIndex } from "./vectorIndex";
 
 /** One line of clauses.jsonl (the fields used here). */
 export interface ClauseLine {
@@ -19,6 +21,8 @@ interface ChunkRow {
   body: string;
 }
 
+/** bge models want this instruction before a search question (not before the stored clauses). */
+export const QUERY_PREFIX = "Represent this sentence for searching relevant passages: ";
 const POOL = 20;
 
 /** The clause text starts with a context line, then an empty line, then the clause. */
@@ -32,12 +36,19 @@ export async function sha1(text: string): Promise<string> {
   return [...new Uint8Array(d)].map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-/** Writes new or changed clauses (row + keyword index). Unchanged ones are skipped, so a re-run is cheap. */
-export async function upsertChunks(db: D1Database, lines: ClauseLine[]): Promise<{ written: number; unchanged: number }> {
+/** Writes new or changed clauses (row, keyword index, vector). Unchanged ones are skipped, so a re-run is cheap. */
+export async function upsertChunks(
+  db: D1Database,
+  index: VectorIndex,
+  embedder: Embedder,
+  lines: ClauseLine[],
+  onBatch: (done: number) => void = () => {},
+): Promise<{ written: number; unchanged: number }> {
   const { results } = await db.prepare("SELECT id, text_hash FROM code_chunks").all<{ id: string; text_hash: string }>();
   const known = new Map(results.map((r) => [r.id, r.text_hash]));
+  const missingVectors = (await index.count()) < known.size;
   const hashed = await Promise.all(lines.map(async (c) => ({ c, hash: await sha1(c.text) })));
-  const todo = hashed.filter(({ c, hash }) => known.get(c.id) !== hash);
+  const todo = hashed.filter(({ c, hash }) => missingVectors || known.get(c.id) !== hash);
 
   const row = db.prepare(
     `INSERT OR REPLACE INTO code_chunks (id, section, heading, provisions, page, source_url, body, text_hash)
@@ -48,6 +59,7 @@ export async function upsertChunks(db: D1Database, lines: ClauseLine[]): Promise
 
   for (let i = 0; i < todo.length; i += 32) {
     const batch = todo.slice(i, i + 32);
+    const vectors = await embedder.embed(batch.map(({ c }) => c.text));
     await db.batch(
       batch.flatMap(({ c, hash }) => {
         const { heading, body } = splitChunkText(c.text);
@@ -59,18 +71,22 @@ export async function upsertChunks(db: D1Database, lines: ClauseLine[]): Promise
         ];
       }),
     );
+    await index.upsert(batch.map(({ c }, j) => ({ id: c.id, vector: vectors[j] })));
+    onBatch(i + batch.length);
   }
   return { written: todo.length, unchanged: lines.length - todo.length };
 }
 
+export type SearchMode = "hybrid" | "keyword" | "vector";
+
 export interface CodeSearch {
-  search(q: string, k: number): Promise<CodeHit[]>;
+  search(q: string, k: number, mode?: SearchMode): Promise<CodeHit[]>;
   /** The full clause text, for the agents (the visitor only sees short quotes). */
   body(chunkId: string): Promise<string | null>;
 }
 
-export function createCodeSearch(deps: { db: D1Database }): CodeSearch {
-  const { db } = deps;
+export function createCodeSearch(deps: { db: D1Database; index: VectorIndex; embedder: Embedder }): CodeSearch {
+  const { db, index, embedder } = deps;
 
   async function keyword(q: string): Promise<string[]> {
     const match = ftsQuery(q);
@@ -83,20 +99,26 @@ export function createCodeSearch(deps: { db: D1Database }): CodeSearch {
     return results.map((r) => r.id);
   }
 
+  async function vector(q: string): Promise<string[]> {
+    const [v] = await embedder.embed([QUERY_PREFIX + q]);
+    return (await index.query(v, POOL)).map((r) => r.id);
+  }
+
   return {
-    async search(q, k) {
-      const ids = (await keyword(q)).slice(0, k);
-      if (!ids.length) return [];
+    async search(q, k, mode = "hybrid") {
+      const [vec, kw] = await Promise.all([mode === "keyword" ? [] : vector(q), mode === "vector" ? [] : keyword(q)]);
+      const fused = fuseRanks({ vector: vec, keyword: kw }).slice(0, k);
+      if (!fused.length) return [];
       const { results } = await db
-        .prepare(`SELECT id, section, heading, provisions, page, source_url, body FROM code_chunks WHERE id IN (${ids.map(() => "?").join(",")})`)
-        .bind(...ids)
+        .prepare(`SELECT id, section, heading, provisions, page, source_url, body FROM code_chunks WHERE id IN (${fused.map(() => "?").join(",")})`)
+        .bind(...fused.map((f) => f.id))
         .all<ChunkRow>();
       const byId = new Map(results.map((r) => [r.id, r]));
-      return ids.flatMap((id): CodeHit[] => {
-        const r = byId.get(id);
+      return fused.flatMap((f): CodeHit[] => {
+        const r = byId.get(f.id);
         if (!r) return [];
         const provisions = JSON.parse(r.provisions) as string[];
-        return [{ chunkId: r.id, section: provisions[0] ?? r.section, provisions, page: r.page, sourceUrl: r.source_url, quote: quoteFor(r.body, q), foundBy: ["keyword"] }];
+        return [{ chunkId: r.id, section: provisions[0] ?? r.section, provisions, page: r.page, sourceUrl: r.source_url, quote: quoteFor(r.body, q), foundBy: f.foundBy }];
       });
     },
     async body(chunkId) {
