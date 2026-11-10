@@ -4,11 +4,11 @@ import { chat } from "./routes/chat";
 import { codeSearch } from "./routes/codeSearch";
 import { health } from "./routes/health";
 
-async function route(request: Request, _env: Env, config: Config): Promise<Response> {
+async function route(request: Request, env: Env, config: Config): Promise<Response> {
   const { pathname } = new URL(request.url);
   const { method } = request;
   if (method === "GET" && pathname === "/api/health") return health(config);
-  if (method === "GET" && pathname === "/api/code/search") return codeSearch(request);
+  if (method === "GET" && pathname === "/api/code/search") return codeSearch(request, env);
   if (method === "POST" && pathname === "/api/chat") return chat(request);
   return Response.json({ error: "not found" }, { status: 404 });
 }

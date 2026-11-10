@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
 import type { Env } from "../../server/config";
+import { readFileSync } from "node:fs";
 import { handle } from "../../server/main";
+import { applySchema } from "../../server/services/modelData";
+import { memoryD1 } from "../fakes/d1";
 
-const env = { ALLOWED_ORIGINS: "http://localhost:5173" } as Env; // no DB: these routes do not use it yet
+const DB = memoryD1();
+await applySchema(DB, readFileSync("db/schema.sql", "utf8")); // empty tables: the routes work, searches find nothing
+const env = { ALLOWED_ORIGINS: "http://localhost:5173", DB } as Env;
 const get = (path: string) => handle(new Request(`http://worker${path}`), env);
 
 describe("Worker routes", () => {

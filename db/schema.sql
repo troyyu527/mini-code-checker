@@ -23,3 +23,17 @@ CREATE TABLE IF NOT EXISTS findings (
   json           TEXT NOT NULL -- Finding (shared/report.ts)
 );
 CREATE INDEX IF NOT EXISTS findings_by_element ON findings (global_id);
+-- Code clauses (npm run ingest). The text stays in D1; the app shows short quotes only.
+CREATE TABLE IF NOT EXISTS code_chunks (
+  id         TEXT PRIMARY KEY, -- e.g. S022#051
+  section    TEXT NOT NULL,
+  heading    TEXT NOT NULL,    -- the context line before the clause text
+  provisions TEXT NOT NULL,    -- JSON array, e.g. ["1010.1.1.1"]
+  page       INTEGER,
+  source_url TEXT NOT NULL,
+  body       TEXT NOT NULL,
+  text_hash  TEXT NOT NULL     -- write again only when the text changes
+);
+
+-- Keyword index (SQLite FTS5) over the same clauses.
+CREATE VIRTUAL TABLE IF NOT EXISTS code_chunks_fts USING fts5 (id UNINDEXED, heading, provisions, body);

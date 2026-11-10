@@ -12,7 +12,8 @@
                     "facts":  "tsx server/cli/printFacts.ts",
                     "build:report":  "tsx server/cli/buildReport.ts",
                     "dev:server":  "wrangler dev",
-                    "seed":  "tsx server/cli/seed.ts"
+                    "seed":  "tsx server/cli/seed.ts",
+                    "ingest":  "tsx server/cli/ingest.ts"
                 },
     "dependencies":  {
                          "react":  "^19.3.1",
