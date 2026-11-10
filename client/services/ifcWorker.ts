@@ -1,6 +1,7 @@
-// Web Worker: parses the IFC file with web-ifc off the main thread and sends back the meshes.
+// Web Worker: parses the IFC file with web-ifc off the main thread and sends back meshes and element facts.
 import { IFCSPACE, IfcAPI, type FlatMesh } from "web-ifc";
 import wasmUrl from "web-ifc/web-ifc.wasm?url";
+import { extractModel, ifcSource, type ModelExtract } from "@shared/elementFacts";
 
 /** The geometry of one element in world coordinates (metres, Y up), one part per colour. */
 export interface MeshData {
@@ -12,7 +13,7 @@ export interface MeshData {
 export type WorkerRequest = { id: number; kind: "open"; url: string };
 export type WorkerResponse =
   | { id: number; kind: "meshes"; meshes: MeshData[] }
-  | { id: number; kind: "opened"; ms: number; ids: [number, string][] }
+  | { id: number; kind: "opened"; model: ModelExtract; ms: number }
   | { id: number; kind: "error"; message: string };
 
 const api = new IfcAPI();
@@ -68,6 +69,7 @@ async function open(id: number, url: string) {
   if (!res.ok) throw new Error(`${url}: HTTP ${res.status}`);
   const modelID = api.OpenModel(new Uint8Array(await res.arrayBuffer()));
   openModel = modelID;
+  const model = extractModel(ifcSource(api, modelID));
 
   const meshes: MeshData[] = [];
   api.StreamAllMeshes(modelID, (m) => meshes.push(toMeshData(modelID, m, false)));
@@ -75,9 +77,7 @@ async function open(id: number, url: string) {
   api.StreamAllMeshesWithTypes(modelID, [IFCSPACE], (m) => meshes.push(toMeshData(modelID, m, true)));
   // transfer the buffers instead of copying them: the worker gives them away to the page
   post({ id, kind: "meshes", meshes }, meshes.flatMap((m) => m.parts.flatMap((p) => [p.positions.buffer, p.normals.buffer, p.indices.buffer])));
-  // expressId → GlobalId of every mesh, so the page can name what was clicked (lesson 18 sends full facts instead)
-  const ids = meshes.map((m): [number, string] => [m.expressId, (api.GetLine(modelID, m.expressId) as { GlobalId: { value: string } }).GlobalId.value]);
-  post({ id, kind: "opened", ms: Math.round(performance.now() - t0), ids });
+  post({ id, kind: "opened", model, ms: Math.round(performance.now() - t0) });
 }
 
 self.addEventListener("message", (e: MessageEvent<WorkerRequest>) => {

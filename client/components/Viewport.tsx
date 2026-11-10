@@ -23,9 +23,10 @@ export function Viewport({ modelUrl }: { modelUrl: string }) {
     store.setStatus({ state: "loading" });
     engine
       .open(modelUrl, (meshes) => live && viewer.add(meshes))
-      .then(({ ms, ids }) => {
+      .then(({ model, ms }) => {
         if (!live) return;
-        viewer.setIds(ids);
+        viewer.setFacts(model.facts);
+        store.setModel(model);
         store.setStatus({ state: "ready", ms });
         store.setRunner((cmd) => viewer.run(cmd));
       })

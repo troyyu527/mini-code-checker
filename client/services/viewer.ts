@@ -1,6 +1,7 @@
 // Three.js viewer: scene, orbit camera, picking, and the ViewerCommands (highlight, zoom, show_issues, reset).
 import * as THREE from "three";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import type { ElementFacts } from "@shared/elementFacts";
 import type { Severity } from "@shared/report";
 import type { ViewerCommand } from "@shared/viewerCommand";
 import type { CommandResult } from "../state/viewerStore";
@@ -19,7 +20,7 @@ interface Element {
 export interface Viewer {
   add(meshes: MeshData[]): void;
   /** Connects the meshes (by expressId) to the elements' GlobalIds. */
-  setIds(ids: [number, string][]): void;
+  setFacts(facts: ElementFacts[]): void;
   run(cmd: ViewerCommand): CommandResult;
   onPick(listener: (globalId: string | null) => void): void;
   dispose(): void;
@@ -145,11 +146,11 @@ export function createViewer(host: HTMLElement): Viewer {
       }
       frameBox(boxOf([...byExpress.values()].filter((e) => !e.isSpace)));
     },
-    setIds(ids) {
-      for (const [expressId, globalId] of ids) {
-        globalOf.set(expressId, globalId);
-        const el = byExpress.get(expressId);
-        if (el) byGlobal.set(globalId, el);
+    setFacts(facts) {
+      for (const f of facts) {
+        globalOf.set(f.expressId, f.globalId);
+        const el = byExpress.get(f.expressId);
+        if (el) byGlobal.set(f.globalId, el);
       }
       paint();
     },

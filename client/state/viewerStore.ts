@@ -1,5 +1,6 @@
-// Viewer state: load status, the selected element, and the function that runs commands.
+// Viewer state: load status, the model's facts, the selected element, and the function that runs commands.
 import { create } from "zustand";
+import type { ModelExtract } from "@shared/elementFacts";
 import { type ViewerCommand, ViewerCommandSchema } from "@shared/viewerCommand";
 
 export type CommandResult = { ok: true } | { ok: false; error: string };
@@ -9,11 +10,13 @@ export type LoadStatus = { state: "idle" } | { state: "loading" } | { state: "re
 
 interface ViewerState {
   status: LoadStatus;
+  model: ModelExtract | null;
   selectedId: string | null;
   runner: Runner | null;
   /** Commands that arrived before the model finished loading. */
   pending: { cmds: ViewerCommand[]; select: string | null };
   setStatus(status: LoadStatus): void;
+  setModel(model: ModelExtract | null): void;
   select(globalId: string | null): void;
   setRunner(runner: Runner | null): void;
   /** Validates a command (it may come from an AI answer) and runs it. */
@@ -24,10 +27,12 @@ interface ViewerState {
 
 export const useViewerStore = create<ViewerState>((set, get) => ({
   status: { state: "idle" },
+  model: null,
   selectedId: null,
   runner: null,
   pending: { cmds: [], select: null },
   setStatus: (status) => set({ status }),
+  setModel: (model) => set({ model }),
   select: (selectedId) => set({ selectedId }),
   setRunner: (runner) => {
     set({ runner });
