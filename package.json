@@ -7,10 +7,11 @@
                     "dev":  "vite",
                     "build":  "npm run lint \u0026\u0026 vite build",
                     "preview":  "vite preview",
-                    "lint":  "tsc --noEmit",
+                    "lint":  "tsc --noEmit \u0026\u0026 tsc --noEmit -p server",
                     "test":  "vitest run",
                     "facts":  "tsx server/cli/printFacts.ts",
-                    "build:report":  "tsx server/cli/buildReport.ts"
+                    "build:report":  "tsx server/cli/buildReport.ts",
+                    "dev:server":  "wrangler dev"
                 },
     "dependencies":  {
                          "react":  "^19.3.1",
@@ -21,6 +22,7 @@
                          "zustand":  "^5.1.0"
                      },
     "devDependencies":  {
+                            "@cloudflare/workers-types":  "^5.20261110.1",
                             "@tailwindcss/vite":  "^4.3.5",
                             "@types/node":  "^24.19.2",
                             "@types/react":  "^19.3.0",
@@ -31,6 +33,7 @@
                             "tsx":  "^4.23.15",
                             "typescript":  "~7.0.2",
                             "vite":  "^8.3.6",
-                            "vitest":  "^5.1.0"
+                            "vitest":  "^5.1.0",
+                            "wrangler":  "^4.153.0"
                         }
 }

@@ -1,0 +1,17 @@
+{
+  // Type check for the Worker and the offline CLI jobs: Workers types + Node types, no DOM.
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["@cloudflare/workers-types", "node"],
+    "paths": { "@shared/*": ["../shared/*"] }
+  },
+  "include": [".", "../shared", "../tests/server"]
+}

@@ -1,0 +1,11 @@
+// Cloudflare Worker config: the Mini Code Checker API.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "mini-code-checker",
+  "main": "server/main.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "ALLOWED_ORIGINS": "http://localhost:5173"
+  }
+}
