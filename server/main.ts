@@ -1,11 +1,15 @@
 // Worker entry: routes each request to its handler. Lesson 22 adds input checks, lesson 33 adds CORS.
 import { type Config, type Env, readConfig } from "./config";
+import { chat } from "./routes/chat";
+import { codeSearch } from "./routes/codeSearch";
 import { health } from "./routes/health";
 
 async function route(request: Request, _env: Env, config: Config): Promise<Response> {
   const { pathname } = new URL(request.url);
   const { method } = request;
   if (method === "GET" && pathname === "/api/health") return health(config);
+  if (method === "GET" && pathname === "/api/code/search") return codeSearch(request);
+  if (method === "POST" && pathname === "/api/chat") return chat(request);
   return Response.json({ error: "not found" }, { status: 404 });
 }
 

@@ -17,4 +17,21 @@ describe("Worker routes", () => {
   it("a POST to the health route is 404 too (method and path must both match)", async () => {
     expect((await handle(new Request("http://worker/api/health", { method: "POST" }), env)).status).toBe(404);
   });
+  it("a bad search query is 400 with a reason", async () => {
+    const res = await get("/api/code/search?q=a");
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as { error: string }).error).toMatch(/2 characters/);
+  });
+  it("k is turned into a number and has a default", async () => {
+    expect((await get("/api/code/search?q=door width")).status).toBe(200);
+    expect((await get("/api/code/search?q=door&k=99")).status).toBe(400);
+  });
+  it("a chat body that is not JSON is 400", async () => {
+    const res = await handle(new Request("http://worker/api/chat", { method: "POST", body: "not json" }), env);
+    expect(res.status).toBe(400);
+  });
+  it("a valid chat request reaches the route (501 until lesson 31)", async () => {
+    const body = JSON.stringify({ sessionId: "s-12345678", message: "Why does D-104 fail?" });
+    expect((await handle(new Request("http://worker/api/chat", { method: "POST", body }), env)).status).toBe(501);
+  });
 });
