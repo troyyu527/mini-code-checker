@@ -55,10 +55,6 @@ export class BudgetLedger {
   record(tokens: number): void {
     if (tokens > 0) this.add("tokens", tokens);
   }
-
-  tokensToday(): number {
-    return this.value("tokens");
-  }
 }
 
 export class BudgetGuard extends DurableObject<Env> {
