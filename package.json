@@ -11,7 +11,8 @@
                     "test":  "vitest run",
                     "facts":  "tsx server/cli/printFacts.ts",
                     "build:report":  "tsx server/cli/buildReport.ts",
-                    "dev:server":  "wrangler dev"
+                    "dev:server":  "wrangler dev",
+                    "seed":  "tsx server/cli/seed.ts"
                 },
     "dependencies":  {
                          "react":  "^19.3.1",

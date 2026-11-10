@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Env } from "../../server/config";
 import { handle } from "../../server/main";
 
-const env = { ALLOWED_ORIGINS: "http://localhost:5173" } as Env;
+const env = { ALLOWED_ORIGINS: "http://localhost:5173" } as Env; // no DB: these routes do not use it yet
 const get = (path: string) => handle(new Request(`http://worker${path}`), env);
 
 describe("Worker routes", () => {

@@ -3,6 +3,7 @@
 /** Bindings and vars from wrangler.jsonc, plus .env locally / secrets when deployed. */
 export interface Env {
   ALLOWED_ORIGINS: string;
+  DB: D1Database;
 }
 
 export const VERSION = "0.1.0";

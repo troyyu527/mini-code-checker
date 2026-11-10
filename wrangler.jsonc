@@ -5,6 +5,8 @@
   "main": "server/main.ts",
   "compatibility_date": "2026-10-01",
   "compatibility_flags": ["nodejs_compat"],
+  // lesson 39 replaces the zero id with the id that `wrangler d1 create` prints
+  "d1_databases": [{ "binding": "DB", "database_name": "mini-code-checker", "database_id": "00000000-0000-0000-0000-000000000000" }],
   "vars": {
     "ALLOWED_ORIGINS": "http://localhost:5173"
   }
