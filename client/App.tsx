@@ -1,8 +1,7 @@
 // App shell: header with the API status, tabs on the left, the 3D view and properties on the right.
-import { useState } from "react";
 import { APP_TITLE } from "@shared/app";
 import { ReportPage } from "./components/ReportPage";
-import { FAKE_REPORT } from "./fakeReport";
+import { TABS, useUiStore } from "./state/uiStore";
 
 type ApiStatus = "checking" | "ok" | "down";
 
@@ -16,10 +15,9 @@ function ApiBadge({ status }: { status: ApiStatus }) {
   );
 }
 
-const TABS = ["Report", "Assistant"] as const;
-
 export function App() {
-  const [tab, setTab] = useState<(typeof TABS)[number]>("Report");
+  const tab = useUiStore((s) => s.tab);
+  const setTab = useUiStore((s) => s.setTab);
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-4 border-b border-line px-5 py-3">
@@ -45,7 +43,7 @@ export function App() {
             ))}
           </nav>
           <div className="min-h-0 flex-1 overflow-hidden">
-            {tab === "Report" ? <ReportPage report={FAKE_REPORT} /> : <p className="p-4 text-sm text-muted">The assistant comes here (lesson 33).</p>}
+            {tab === "Report" ? <ReportPage /> : <p className="p-4 text-sm text-muted">The assistant comes here (lesson 33).</p>}
           </div>
         </section>
         <section className="flex min-h-[24rem] flex-1 flex-col">

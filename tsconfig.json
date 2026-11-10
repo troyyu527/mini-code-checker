@@ -1,4 +1,4 @@
-﻿{
+{
   // Type check for the browser code (client/) and the shared code (shared/).
   "compilerOptions": {
     "target": "ES2022",
@@ -14,5 +14,5 @@
     "types": ["vite/client"],
     "paths": { "@shared/*": ["./shared/*"] }
   },
-  "include": ["client", "shared"]
+  "include": ["client", "shared", "tests/shared", "tests/client"]
 }
