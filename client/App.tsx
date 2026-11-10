@@ -1,7 +1,19 @@
 // App shell: header with the API status, tabs on the left, the 3D view and properties on the right.
+import { lazy, Suspense, useEffect } from "react";
 import { APP_TITLE } from "@shared/app";
+import type { Report } from "@shared/report";
 import { ReportPage } from "./components/ReportPage";
+import { FAKE_REPORT } from "./fakeReport";
+import { useReportStore } from "./state/reportStore";
 import { TABS, useUiStore } from "./state/uiStore";
+
+// Downloaded only when it is first shown: lesson 16 puts Three.js (≈ 0.5 MB) in here
+const Viewport = lazy(() => import("./components/Viewport").then((m) => ({ default: m.Viewport })));
+
+const SAMPLE_ID = "office";
+
+/** Pretends to load the report over the network (lesson 14 fetches report.json instead). */
+const loadFakeReport = (_sampleId: string) => new Promise<Report>((resolve) => setTimeout(() => resolve(FAKE_REPORT), 600));
 
 type ApiStatus = "checking" | "ok" | "down";
 
@@ -18,6 +30,23 @@ function ApiBadge({ status }: { status: ApiStatus }) {
 export function App() {
   const tab = useUiStore((s) => s.tab);
   const setTab = useUiStore((s) => s.setTab);
+
+  useEffect(() => {
+    let live = true; // set to false by the cleanup: an answer that arrives later is ignored
+    const store = useReportStore.getState();
+    store.setLoading();
+    loadFakeReport(SAMPLE_ID)
+      .then((r) => live && store.setReport(r))
+      .catch(() => live && store.setError());
+    return () => {
+      live = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    document.title = `${tab} · ${APP_TITLE}`;
+  }, [tab]);
+
   return (
     <div className="flex h-full flex-col">
       <header className="flex items-center gap-4 border-b border-line px-5 py-3">
@@ -47,7 +76,11 @@ export function App() {
           </div>
         </section>
         <section className="flex min-h-[24rem] flex-1 flex-col">
-          <div className="grid flex-1 place-items-center text-muted">3D view (lesson 16)</div>
+          <div className="min-h-0 flex-1">
+            <Suspense fallback={<p className="p-4 text-sm text-muted">Loading 3D viewer…</p>}>
+              <Viewport modelUrl={`${import.meta.env.BASE_URL}samples/${SAMPLE_ID}/arch.ifc`} />
+            </Suspense>
+          </div>
           <div className="h-48 border-t border-line p-3 text-sm text-muted">Properties (lesson 17)</div>
         </section>
       </main>
