@@ -44,4 +44,5 @@ describe("Worker routes", () => {
     const res = await handle(new Request("http://worker/api/chat", { method: "POST", body }), { ...env, SESSION } as unknown as Env);
     expect(res.headers.get("Content-Type")).toBe("text/event-stream");
     expect(asked).toEqual(["s-12345678"]);
-  });});
+  });
+});
