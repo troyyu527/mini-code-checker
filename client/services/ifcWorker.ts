@@ -12,7 +12,7 @@ export interface MeshData {
 export type WorkerRequest = { id: number; kind: "open"; url: string };
 export type WorkerResponse =
   | { id: number; kind: "meshes"; meshes: MeshData[] }
-  | { id: number; kind: "opened"; ms: number }
+  | { id: number; kind: "opened"; ms: number; ids: [number, string][] }
   | { id: number; kind: "error"; message: string };
 
 const api = new IfcAPI();
@@ -75,7 +75,9 @@ async function open(id: number, url: string) {
   api.StreamAllMeshesWithTypes(modelID, [IFCSPACE], (m) => meshes.push(toMeshData(modelID, m, true)));
   // transfer the buffers instead of copying them: the worker gives them away to the page
   post({ id, kind: "meshes", meshes }, meshes.flatMap((m) => m.parts.flatMap((p) => [p.positions.buffer, p.normals.buffer, p.indices.buffer])));
-  post({ id, kind: "opened", ms: Math.round(performance.now() - t0) });
+  // expressId → GlobalId of every mesh, so the page can name what was clicked (lesson 18 sends full facts instead)
+  const ids = meshes.map((m): [number, string] => [m.expressId, (api.GetLine(modelID, m.expressId) as { GlobalId: { value: string } }).GlobalId.value]);
+  post({ id, kind: "opened", ms: Math.round(performance.now() - t0), ids });
 }
 
 self.addEventListener("message", (e: MessageEvent<WorkerRequest>) => {

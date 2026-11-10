@@ -1,6 +1,7 @@
 // App shell: header with the API status, tabs on the left, the 3D view and properties on the right.
 import { lazy, Suspense, useEffect } from "react";
 import { APP_TITLE } from "@shared/app";
+import { PropertiesPanel } from "./components/PropertiesPanel";
 import { ReportPage } from "./components/ReportPage";
 import type { ReportLoader } from "./services/reportLoader";
 import { useReportStore } from "./state/reportStore";
@@ -77,7 +78,9 @@ export function App({ loadReport }: { loadReport: ReportLoader }) {
               <Viewport modelUrl={`${import.meta.env.BASE_URL}samples/${SAMPLE_ID}/arch.ifc`} />
             </Suspense>
           </div>
-          <div className="h-48 border-t border-line p-3 text-sm text-muted">Properties (lesson 17)</div>
+          <div className="h-48 border-t border-line">
+            <PropertiesPanel />
+          </div>
         </section>
       </main>
     </div>
