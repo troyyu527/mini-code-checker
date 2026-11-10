@@ -16,7 +16,9 @@
         "ingest": "tsx server/cli/ingest.ts",
         "ask": "tsx server/cli/ask.ts",
         "chat": "tsx server/cli/chat.ts",
-        "test:coverage": "vitest run --coverage"
+        "test:coverage": "vitest run --coverage",
+        "eval:search": "tsx server/cli/evalSearch.ts",
+        "eval:report": "tsx server/cli/evalReport.ts"
     },
     "dependencies": {
         "@langchain/core": "^1.3.6",

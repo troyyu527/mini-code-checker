@@ -1,0 +1,7 @@
+[
+  {"topic":"door_clear_width","element":"D-104","globalId":"3TakfvuqXJzADJAiopzYwD","observed":762,"required":812.8},
+  {"topic":"door_clear_width","element":"D-107","globalId":"2zUezH1h1ID8IPokRC0Kwv","observed":711,"required":812.8},
+  {"topic":"ceiling_height","element":"105","globalId":"3iUI1nRjDOgPm7JsX19MkA","observed":2210,"required":2286.0},
+  {"topic":"door_height","element":"D-E2","globalId":"2D4lvmzqXQohH4VNYweDev","observed":1981,"required":2032.0},
+  {"topic":"room_floor_area","element":"109","globalId":"1L_IfeP7vI9QeU9oIvyHh4","observed":7.2,"required":7.4}
+]

@@ -1,0 +1,23 @@
+[
+  {"q":"What is the minimum clear width of an egress door opening?","expect":["1010.1.1.1"]},
+  {"q":"Maximum stair riser height and minimum tread depth","expect":["1011.5.2"]},
+  {"q":"How high must a guard be at an open-sided walking surface?","expect":["1015.3"]},
+  {"q":"Minimum corridor width by occupancy","expect":["1020.2"]},
+  {"q":"Minimum ceiling height for occupiable spaces and corridors","expect":["1208.2"]},
+  {"q":"Required handrail height above the stair nosings","expect":["1014.2"]},
+  {"q":"How much headroom clearance is needed in a stairway?","expect":["1011.3"]},
+  {"q":"Maximum length of a dead-end corridor","expect":["1020.4"]},
+  {"q":"Can a 4 inch sphere pass through the openings of a guard?","expect":["1015.4"]},
+  {"q":"Steepest running slope allowed for an egress ramp","expect":["1012.2"]},
+  {"q":"Minimum net floor area of habitable rooms","expect":["1208.3"]},
+  {"q":"Illumination level required along the means of egress","expect":["1008.2"]},
+  {"q":"When is a single exit from a story permitted?","expect":["1006.3.2"]},
+  {"q":"Maximum exit access travel distance","expect":["1017.2"]},
+  {"q":"Minimum net clear opening of emergency escape and rescue openings","expect":["1030.2"]},
+  {"q":"How large must the landings at the top and bottom of a stairway be?","expect":["1011.6"]},
+  {"q":"Do stairways need handrails on both sides?","expect":["1011.11"]},
+  {"q":"Must the floor on both sides of a door be at the same elevation?","expect":["1010.1.5"]},
+  {"q":"Projections into the required clear width of a door opening","expect":["1010.1.1.2"]},
+  {"q":"Section 1010.1.1.1","expect":["1010.1.1.1"]},
+  {"q":"Required egress capacity in inches per occupant","expect":["1005.3"]}
+]
