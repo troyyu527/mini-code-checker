@@ -10,6 +10,13 @@ export const FAKE_REPORT: Report = {
     {
       "id": "R-01",
       "title": "Door clear width at least 32 in",
+      "appliesTo": "IfcDoor",
+      "where": [],
+      "quantity": "clearWidthMm",
+      "op": ">=",
+      "value": 32,
+      "unit": "in",
+      "limit": 812.8,
       "citation": {
         "chunkId": "S022#051",
         "section": "1010.1.1.1",
@@ -21,6 +28,13 @@ export const FAKE_REPORT: Report = {
     {
       "id": "R-02",
       "title": "Ceiling height of occupiable spaces at least 7 ft 6 in",
+      "appliesTo": "IfcSpace",
+      "where": [{ "field": "objectType", "op": "not_in", "values": ["Restroom", "Storage"] }],
+      "quantity": "ceilingHeightMm",
+      "op": ">=",
+      "value": 90,
+      "unit": "in",
+      "limit": 2286,
       "citation": {
         "chunkId": "S024#033",
         "section": "1208.2",
