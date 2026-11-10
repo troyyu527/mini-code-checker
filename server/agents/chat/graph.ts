@@ -10,7 +10,7 @@ import type { LlmClient } from "../../services/llm";
 import type { FindingWithRule } from "../../services/modelData";
 import { type Decision, supervise } from "./supervisor";
 import { researchCode } from "./research";
-import { DONT_KNOW, type EvidenceItem, markCitations, type NewEvidence, publicEvidence, writeAnswer } from "./writer";
+import { DONT_KNOW, type EvidenceItem, markCitations, type NewEvidence, publicEvidence, removeLinks, writeAnswer } from "./writer";
 
 // A "replace" channel keeps the newest value; the trace channel appends.
 const replace = <T>(d: () => T) => Annotation<T>({ reducer: (_, b) => b, default: d });
@@ -81,7 +81,7 @@ export function buildChatGraph(deps: ChatDeps) {
       const { value, ms } = await timed(() => writeAnswer(llm, { message: s.message, evidence: s.evidence, needsCode }));
       if (!value.enough && needsCode) return { answer: DONT_KNOW, evidence: [], trace: [{ agent: "writer", ms, summary: "the passages do not answer it → I don't know" }] };
       return {
-        answer: markCitations(value.answer, value.cites),
+        answer: markCitations(removeLinks(value.answer), value.cites),
         evidence: needsCode ? s.evidence.filter((e) => value.cites.includes(e.id)) : s.evidence,
         trace: [{ agent: "writer", ms, summary: `answer citing ${value.cites.join(", ") || "nothing"}` }],
       };

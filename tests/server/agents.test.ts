@@ -5,7 +5,7 @@ import type { ElementFacts } from "@shared/elementFacts";
 import { makeRequirement } from "@shared/requirement";
 import { buildChatGraph, runChat } from "../../server/agents/chat/graph";
 import { mentionedElements } from "../../server/agents/chat/supervisor";
-import { DONT_KNOW } from "../../server/agents/chat/writer";
+import { DONT_KNOW, removeLinks } from "../../server/agents/chat/writer";
 import { repairQuote, reviewRule } from "../../server/agents/qa/reviewer";
 import { TOPICS } from "../../server/agents/qa/topics";
 import type { CodeSearch } from "../../server/services/codeSearch";
@@ -93,3 +93,13 @@ describe("reviewer", () => {
   });
 });
 
+describe("removeLinks", () => {
+  it.each([
+    { name: "a web address", text: "See http://evil.example/code now.", want: "See [link removed] now." },
+    { name: "www without http", text: "Go to www.evil.example", want: "Go to [link removed]" },
+    { name: "an e-mail address", text: "Mail review@evil.example today.", want: "Mail [link removed] today." },
+    { name: "a normal answer", text: "At least 812.8 mm (32 in) per NYC BC §1010.1.1 [E1].", want: "At least 812.8 mm (32 in) per NYC BC §1010.1.1 [E1]." },
+  ])("$name", ({ text, want }) => {
+    expect(removeLinks(text)).toBe(want);
+  });
+});

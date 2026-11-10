@@ -47,3 +47,7 @@ export function markCitations(answer: string, cites: string[]): string {
 }
 
 export const publicEvidence = (items: EvidenceItem[]): Evidence[] => items.map(({ text: _text, ...e }) => e as Evidence);
+
+/** Links and e-mail addresses never come from the evidence, so any in an answer were asked for by someone else. */
+const LINK = /\bhttps?:\/\/\S+|\bwww\.\S+|[\w.+-]+@[\w-]+(\.[\w-]+)+/gi;
+export const removeLinks = (answer: string): string => answer.replace(LINK, "[link removed]");
