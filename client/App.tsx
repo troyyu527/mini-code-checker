@@ -1,9 +1,8 @@
 // App shell: header with the API status, tabs on the left, the 3D view and properties on the right.
 import { lazy, Suspense, useEffect } from "react";
 import { APP_TITLE } from "@shared/app";
-import type { Report } from "@shared/report";
 import { ReportPage } from "./components/ReportPage";
-import { FAKE_REPORT } from "./fakeReport";
+import type { ReportLoader } from "./services/reportLoader";
 import { useReportStore } from "./state/reportStore";
 import { TABS, useUiStore } from "./state/uiStore";
 
@@ -11,9 +10,6 @@ import { TABS, useUiStore } from "./state/uiStore";
 const Viewport = lazy(() => import("./components/Viewport").then((m) => ({ default: m.Viewport })));
 
 const SAMPLE_ID = "office";
-
-/** Pretends to load the report over the network (lesson 14 fetches report.json instead). */
-const loadFakeReport = (_sampleId: string) => new Promise<Report>((resolve) => setTimeout(() => resolve(FAKE_REPORT), 600));
 
 type ApiStatus = "checking" | "ok" | "down";
 
@@ -27,7 +23,7 @@ function ApiBadge({ status }: { status: ApiStatus }) {
   );
 }
 
-export function App() {
+export function App({ loadReport }: { loadReport: ReportLoader }) {
   const tab = useUiStore((s) => s.tab);
   const setTab = useUiStore((s) => s.setTab);
 
@@ -35,13 +31,13 @@ export function App() {
     let live = true; // set to false by the cleanup: an answer that arrives later is ignored
     const store = useReportStore.getState();
     store.setLoading();
-    loadFakeReport(SAMPLE_ID)
+    loadReport(SAMPLE_ID)
       .then((r) => live && store.setReport(r))
       .catch(() => live && store.setError());
     return () => {
       live = false;
     };
-  }, []);
+  }, [loadReport]);
 
   useEffect(() => {
     document.title = `${tab} · ${APP_TITLE}`;

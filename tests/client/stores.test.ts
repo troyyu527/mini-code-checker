@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { useReportStore } from "../../client/state/reportStore";
 import { useUiStore } from "../../client/state/uiStore";
-import { FAKE_REPORT } from "../../client/fakeReport";
+import { FAKE_REPORT } from "../fakes/report";
 
 describe("uiStore", () => {
   beforeEach(() => useUiStore.setState({ tab: "Report", severities: ["major", "minor"] }));

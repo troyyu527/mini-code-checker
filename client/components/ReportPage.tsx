@@ -3,6 +3,7 @@ import { SEVERITIES } from "@shared/report";
 import { useReportStore } from "../state/reportStore";
 import { useUiStore } from "../state/uiStore";
 import { FindingCard } from "./FindingCard";
+import { TracePlayer } from "./TracePlayer";
 
 export function ReportPage() {
   const { status, report, selectedId, selectFinding } = useReportStore();
@@ -31,6 +32,7 @@ export function ReportPage() {
         <FindingCard key={f.id} finding={f} requirement={requirements.get(f.requirementId)} selected={f.id === selectedId} onView={selectFinding} />
       ))}
       {shown.length === 0 && <p className="text-sm text-muted">No findings match the filter.</p>}
+      <TracePlayer trace={report.trace} />
     </div>
   );
 }

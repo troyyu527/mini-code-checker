@@ -1,5 +1,6 @@
 // One finding: element, measured vs required value, the rule's code citation, and "View in model".
-import { describeFinding, type Finding, type Requirement } from "@shared/report";
+import { describeFinding, type Finding } from "@shared/report";
+import type { Requirement } from "@shared/requirement";
 import { SeverityBadge } from "./SeverityBadge";
 
 interface Props {
