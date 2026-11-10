@@ -1,5 +1,6 @@
-// POST /api/chat: validate the input. Lesson 31 streams the agent's answer; for now the route says it is not built yet.
+// POST /api/chat: validate the input, then stream the session agent's run as server-sent events.
 import { ChatRequestSchema } from "@shared/contracts";
+import type { Env } from "../config";
 
 async function readJson(request: Request): Promise<unknown> {
   try {
@@ -9,8 +10,11 @@ async function readJson(request: Request): Promise<unknown> {
   }
 }
 
-export async function chat(request: Request): Promise<Response> {
+export async function chat(request: Request, env: Env): Promise<Response> {
   const parsed = ChatRequestSchema.safeParse(await readJson(request));
   if (!parsed.success) return Response.json({ error: parsed.error.issues[0]?.message ?? "invalid request" }, { status: 400 });
-  return Response.json({ error: "the assistant is not built yet" }, { status: 501 });
+  // one Durable Object per session id: the same id always reaches the same object
+  const agent = env.SESSION.get(env.SESSION.idFromName(parsed.data.sessionId));
+  const stream = await agent.chat(parsed.data);
+  return new Response(stream, { headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache" } });
 }

@@ -1,9 +1,11 @@
 // Worker configuration: the only file that knows the names of the bindings and settings.
+import type { SessionAgent } from "./services/sessionAgent";
 
 /** Bindings and vars from wrangler.jsonc, plus .env locally / secrets when deployed. */
 export interface Env {
   ALLOWED_ORIGINS: string;
   DB: D1Database;
+  SESSION: DurableObjectNamespace<SessionAgent>;
   OLLAMA_BASE_URL?: string;
   OLLAMA_API_KEY?: string;
   OLLAMA_MODEL?: string;

@@ -4,12 +4,15 @@ import { chat } from "./routes/chat";
 import { codeSearch } from "./routes/codeSearch";
 import { health } from "./routes/health";
 
+// Durable Object classes must be exported from the entry file
+export { SessionAgent } from "./services/sessionAgent";
+
 async function route(request: Request, env: Env, config: Config): Promise<Response> {
   const { pathname } = new URL(request.url);
   const { method } = request;
   if (method === "GET" && pathname === "/api/health") return health(config);
   if (method === "GET" && pathname === "/api/code/search") return codeSearch(request, env);
-  if (method === "POST" && pathname === "/api/chat") return chat(request);
+  if (method === "POST" && pathname === "/api/chat") return chat(request, env);
   return Response.json({ error: "not found" }, { status: 404 });
 }
 

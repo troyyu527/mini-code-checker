@@ -34,8 +34,14 @@ describe("Worker routes", () => {
     const res = await handle(new Request("http://worker/api/chat", { method: "POST", body: "not json" }), env);
     expect(res.status).toBe(400);
   });
-  it("a valid chat request reaches the route (501 until lesson 31)", async () => {
+  it("a valid chat request is handed to the session's Durable Object and streamed back", async () => {
+    const asked: string[] = [];
+    const SESSION = {
+      idFromName: (name: string) => (asked.push(name), name),
+      get: () => ({ chat: async () => new Response("data: {}\n\n").body! }),
+    };
     const body = JSON.stringify({ sessionId: "s-12345678", message: "Why does D-104 fail?" });
-    expect((await handle(new Request("http://worker/api/chat", { method: "POST", body }), env)).status).toBe(501);
-  });
-});
+    const res = await handle(new Request("http://worker/api/chat", { method: "POST", body }), { ...env, SESSION } as unknown as Env);
+    expect(res.headers.get("Content-Type")).toBe("text/event-stream");
+    expect(asked).toEqual(["s-12345678"]);
+  });});
