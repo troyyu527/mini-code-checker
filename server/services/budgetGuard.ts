@@ -40,14 +40,20 @@ export class BudgetLedger {
     this.sql.exec("DELETE FROM budget WHERE day < ?", day); // old days are not needed any more
   }
 
-  /** May this session send one more message? If yes, the message is counted. */
-  reserve(sessionId: string): Gate {
+  /** May this session (of this visitor) send one more message? If yes, the message is counted for both. */
+  reserve(sessionId: string, visitor = "local"): Gate {
     if (this.value("tokens") >= this.limits.dailyTokens) return { ok: false, notice: BUDGET_NOTICE };
     const key = `chat:${sessionId}`;
     if (this.value(key) >= this.limits.sessionMessages) {
       return { ok: false, notice: `This session has used its ${this.limits.sessionMessages} messages for today. The report keeps working.` };
     }
+    // a new session id is free to make, so a session limit alone stops nobody: count the visitor too
+    const who = `visitor:${visitor}`;
+    if (this.value(who) >= this.limits.visitorMessages) {
+      return { ok: false, notice: `You have used your ${this.limits.visitorMessages} messages for today. The report keeps working.` };
+    }
     this.add(key, 1);
+    this.add(who, 1);
     return { ok: true };
   }
 
@@ -65,8 +71,8 @@ export class BudgetGuard extends DurableObject<Env> {
     this.ledger = new BudgetLedger(ctx.storage.sql, readLimits(env));
   }
 
-  reserve(sessionId: string): Gate {
-    return this.ledger.reserve(sessionId);
+  reserve(sessionId: string, visitor?: string): Gate {
+    return this.ledger.reserve(sessionId, visitor);
   }
 
   record(tokens: number): void {

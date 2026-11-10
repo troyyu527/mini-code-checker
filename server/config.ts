@@ -18,6 +18,7 @@ export interface Env {
   OLLAMA_EMBEDDING_MODEL?: string;
   DAILY_TOKEN_LIMIT?: string;
   SESSION_MESSAGE_LIMIT?: string;
+  VISITOR_MESSAGE_LIMIT?: string;
 }
 
 export const VERSION = "0.1.0";
@@ -39,11 +40,17 @@ export interface Limits {
   dailyTokens: number;
   /** Chat messages per session per day. */
   sessionMessages: number;
+  /** Chat messages per visitor (IP address) per day, over all their sessions. */
+  visitorMessages: number;
 }
 
-export const LIMITS: Limits = { dailyTokens: 200_000, sessionMessages: 20 };
+export const LIMITS: Limits = { dailyTokens: 200_000, sessionMessages: 20, visitorMessages: 60 };
 
-export function readLimits(env: Pick<Env, "DAILY_TOKEN_LIMIT" | "SESSION_MESSAGE_LIMIT">): Limits {
+export function readLimits(env: Pick<Env, "DAILY_TOKEN_LIMIT" | "SESSION_MESSAGE_LIMIT" | "VISITOR_MESSAGE_LIMIT">): Limits {
   const n = (v: string | undefined, d: number) => (v && Number.isFinite(Number(v)) ? Number(v) : d);
-  return { dailyTokens: n(env.DAILY_TOKEN_LIMIT, LIMITS.dailyTokens), sessionMessages: n(env.SESSION_MESSAGE_LIMIT, LIMITS.sessionMessages) };
+  return {
+    dailyTokens: n(env.DAILY_TOKEN_LIMIT, LIMITS.dailyTokens),
+    sessionMessages: n(env.SESSION_MESSAGE_LIMIT, LIMITS.sessionMessages),
+    visitorMessages: n(env.VISITOR_MESSAGE_LIMIT, LIMITS.visitorMessages),
+  };
 }

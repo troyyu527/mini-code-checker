@@ -9,13 +9,18 @@ import { memorySql } from "../fakes/sqlite";
 
 describe("BudgetLedger", () => {
   it("stops a session at its message limit", () => {
-    const ledger = new BudgetLedger(memorySql(), { dailyTokens: 1000, sessionMessages: 2 }, () => "2026-11-09");
+    const ledger = new BudgetLedger(memorySql(), { dailyTokens: 1000, sessionMessages: 2, visitorMessages: 60 }, () => "2026-11-09");
     expect([ledger.reserve("s1").ok, ledger.reserve("s1").ok, ledger.reserve("s1").ok]).toEqual([true, true, false]);
     expect(ledger.reserve("s2").ok).toBe(true); // other sessions are not affected
   });
+  it("stops a visitor at their limit, even with a new session id", () => {
+    const ledger = new BudgetLedger(memorySql(), { dailyTokens: 1000, sessionMessages: 20, visitorMessages: 2 }, () => "2026-11-09");
+    expect([ledger.reserve("s1", "v1").ok, ledger.reserve("s2", "v1").ok, ledger.reserve("s3", "v1").ok]).toEqual([true, true, false]);
+    expect(ledger.reserve("s4", "v2").ok).toBe(true); // another visitor is not affected
+  });
   it("stops everyone when the daily tokens are used up, and starts again the next day", () => {
     let day = "2026-11-09";
-    const ledger = new BudgetLedger(memorySql(), { dailyTokens: 1000, sessionMessages: 20 }, () => day);
+    const ledger = new BudgetLedger(memorySql(), { dailyTokens: 1000, sessionMessages: 20, visitorMessages: 60 }, () => day);
     ledger.record(999);
     expect(ledger.reserve("s1").ok).toBe(true); // 999 < 1000
     ledger.record(1);
@@ -27,8 +32,8 @@ describe("BudgetLedger", () => {
 
 describe("readLimits", () => {
   it("uses the defaults unless a setting is a number", () => {
-    expect(readLimits({})).toEqual({ dailyTokens: 200_000, sessionMessages: 20 });
-    expect(readLimits({ DAILY_TOKEN_LIMIT: "2000", SESSION_MESSAGE_LIMIT: "lots" })).toEqual({ dailyTokens: 2000, sessionMessages: 20 });
+    expect(readLimits({})).toEqual({ dailyTokens: 200_000, sessionMessages: 20, visitorMessages: 60 });
+    expect(readLimits({ DAILY_TOKEN_LIMIT: "2000", SESSION_MESSAGE_LIMIT: "lots" })).toEqual({ dailyTokens: 2000, sessionMessages: 20, visitorMessages: 60 });
   });
 });
 

@@ -47,7 +47,7 @@ async function agentWith(limits: Limits) {
 
 const eventsOf = async (stream: ReadableStream<Uint8Array>) => decodeEvents(await new Response(stream).text()).events;
 const ask = (message: string) => ({ sessionId: "s-12345678", message });
-const LIMITS = { dailyTokens: 1000, sessionMessages: 20 };
+const LIMITS = { dailyTokens: 1000, sessionMessages: 20, visitorMessages: 60 };
 
 afterEach(() => vi.unstubAllGlobals());
 

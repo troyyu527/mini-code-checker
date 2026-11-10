@@ -32,10 +32,11 @@ export function eventStream(run: (send: Send) => Promise<void>): ReadableStream<
 }
 
 export class SessionAgent extends DurableObject<Env> {
-  chat(req: ChatRequest): ReadableStream<Uint8Array> {
+  /** `visitor`: a hash of the visitor's IP address (see routes/chat.ts). */
+  chat(req: ChatRequest, visitor?: string): ReadableStream<Uint8Array> {
     return eventStream(async (send) => {
       const budget = this.env.BUDGET.get(this.env.BUDGET.idFromName("global"));
-      const gate = await budget.reserve(req.sessionId);
+      const gate = await budget.reserve(req.sessionId, visitor);
       if (!gate.ok) return send({ type: "error", error: gate.notice, notice: true });
 
       const ai = aiPlatform(this.env);
