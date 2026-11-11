@@ -1,0 +1,48 @@
+# CD (frontend): when a merge changes the browser app, build it and publish it to GitHub Pages.
+# No secrets: GitHub gives the workflow its own short-lived token (the `permissions` below).
+name: pages
+
+on:
+  push:
+    branches: [main]
+    paths: ["client/**", "shared/**", "vite.config.ts", "package*.json", ".github/workflows/pages.yml"]
+  workflow_dispatch: # a "Run workflow" button on the Actions tab
+
+permissions:
+  contents: read
+  pages: write # publish to Pages
+  id-token: write # prove to Pages that this run comes from this repo
+
+concurrency:
+  group: pages
+  cancel-in-progress: true # a newer merge makes an older build pointless
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+        env:
+          # a repository variable (Settings → Secrets and variables → Actions → Variables), not a secret:
+          # everything in the frontend build is public anyway
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
