@@ -43,7 +43,12 @@ export function mentionedElements(message: string, facts: ElementFacts[], findin
  * asking back (lesson 41: both models asked back).
  */
 export function asksAboutReport(message: string): boolean {
-  return /\b(findings?|issues?|problems?|defects?|violations?)\b/i.test(message) || /\b(the|this|my|our) (model|building|report)\b/i.test(message);
+  return (
+    /\b(findings?|issues?|problems?|defects?|violations?|failures?|fails?|fix)\b/i.test(message) ||
+    /\b(the|this|my|our) (model|building|report)\b/i.test(message) ||
+    // the model's elements by kind: "the doors", "which room"
+    /\b(the|which|what|any) (doors?|rooms?|spaces?)\b/i.test(message)
+  );
 }
 
 const LlmDecision = z.discriminatedUnion("route", [

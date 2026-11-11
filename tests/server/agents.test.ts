@@ -42,7 +42,7 @@ describe("mentionedElements", () => {
 
 describe("asksAboutReport", () => {
   it("report words and the model itself go to the findings, code questions do not", () => {
-    for (const m of ["Which findings are errors?", "What problems does the model have?", "How many issues?", "Is this building OK?"]) expect(asksAboutReport(m), m).toBe(true);
+    for (const m of ["Which findings are errors?", "What problems does the model have?", "How many issues?", "Is this building OK?", "Any failures?", "What should I fix first?", "Are the doors wide enough?"]) expect(asksAboutReport(m), m).toBe(true);
     for (const m of ["What is the minimum corridor width in the code?", "How wide must an exit door be?", "hi"]) expect(asksAboutReport(m), m).toBe(false);
   });
 });
