@@ -4,7 +4,7 @@ import type { CodeHit } from "@shared/codeSearch";
 import type { ElementFacts } from "@shared/elementFacts";
 import { makeRequirement } from "@shared/requirement";
 import { buildChatGraph, runChat } from "../../server/agents/chat/graph";
-import { mentionedElements } from "../../server/agents/chat/supervisor";
+import { asksAboutReport, mentionedElements } from "../../server/agents/chat/supervisor";
 import { DONT_KNOW, removeLinks } from "../../server/agents/chat/writer";
 import { repairQuote, reviewRule } from "../../server/agents/qa/reviewer";
 import { TOPICS } from "../../server/agents/qa/topics";
@@ -31,6 +31,19 @@ describe("mentionedElements", () => {
   });
   it("a finding id leads to its element", () => {
     expect(mentionedElements("explain f-01", facts, findings).map((f) => f.name)).toEqual(["D-104"]);
+  });
+  it("a room's long name counts only when one element has it", () => {
+    const rooms = [{ ...fact("C-100", "IfcSpace"), longName: "Corridor" }, { ...fact("104", "IfcSpace"), longName: "Office" }, { ...fact("105", "IfcSpace"), longName: "Office" }];
+    expect(mentionedElements("Is the corridor wide enough?", rooms, findings).map((f) => f.name)).toEqual(["C-100"]);
+    expect(mentionedElements("Is the office tall enough?", rooms, findings)).toEqual([]);
+    expect(mentionedElements("What is the minimum corridor width in the code?", rooms, findings)).toEqual([]);
+  });
+});
+
+describe("asksAboutReport", () => {
+  it("report words and the model itself go to the findings, code questions do not", () => {
+    for (const m of ["Which findings are errors?", "What problems does the model have?", "How many issues?", "Is this building OK?"]) expect(asksAboutReport(m), m).toBe(true);
+    for (const m of ["What is the minimum corridor width in the code?", "How wide must an exit door be?", "hi"]) expect(asksAboutReport(m), m).toBe(false);
   });
 });
 

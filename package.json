@@ -21,7 +21,8 @@
         "eval:report": "tsx server/cli/evalReport.ts",
         "deploy:server": "wrangler deploy --env production",
         "seed:remote": "tsx server/cli/seed.ts --remote",
-        "ingest:remote": "tsx server/cli/ingest.ts --remote"
+        "ingest:remote": "tsx server/cli/ingest.ts --remote",
+        "eval:routing": "tsx server/cli/evalRouting.ts"
     },
     "dependencies": {
         "@langchain/core": "^1.3.6",

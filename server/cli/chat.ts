@@ -6,7 +6,8 @@ import { meteredLlm } from "../services/llm";
 import { getFacts, getFindings } from "../services/modelData";
 import { openBindings } from "./platform";
 
-const message = process.argv.slice(2).join(" ") || "Why does D-104 fail?";
+// the words of the message, without options such as --remote
+const message = process.argv.slice(2).filter((a) => !a.startsWith("--")).join(" ") || "Why does D-104 fail?";
 const { env, dispose } = await openBindings();
 try {
   const ai = aiPlatform(env);
