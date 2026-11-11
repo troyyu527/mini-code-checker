@@ -21,12 +21,29 @@ export function mentionedElements(message: string, facts: ElementFacts[], findin
     // door "D-104" (\b would: it treats "-" as a word boundary) and room "101" not inside section "1010.1".
     if (f.name && new RegExp(`(?<![\\w.-])${escape(f.name)}(?![\\w-]|\\.\\d)`, "i").test(message)) found.set(f.globalId, f);
   }
+  // A room's long name ("the corridor", "the pantry"), but only a name that one element has ("office" names five
+  // rooms), and not when the message is about the code text ("the minimum corridor width in the code")
+  const aboutCode = /\b(code|section|table|chapter)\b|§/i.test(message);
+  const longNames = new Map<string, ElementFacts[]>();
+  for (const f of facts) if (f.longName) longNames.set(f.longName.toLowerCase(), [...(longNames.get(f.longName.toLowerCase()) ?? []), f]);
+  for (const [longName, owners] of aboutCode ? [] : longNames) {
+    if (owners.length === 1 && new RegExp(`\\b${escape(longName)}\\b`, "i").test(message)) found.set(owners[0].globalId, owners[0]);
+  }
   for (const id of message.match(/\bF-\d{2}\b/gi) ?? []) {
     const hit = findings.find((x) => x.finding.id.toLowerCase() === id.toLowerCase());
     const fact = hit && facts.find((f) => f.globalId === hit.finding.globalId);
     if (fact) found.set(fact.globalId, fact);
   }
   return [...found.values()];
+}
+
+/**
+ * A question about the report as a whole: it names the report's own words ("findings", "issues", "problems") or the
+ * model itself ("the model", "this building"). The LLM cannot route these: its only choices are a code question or
+ * asking back (lesson 41: both models asked back).
+ */
+export function asksAboutReport(message: string): boolean {
+  return /\b(findings?|issues?|problems?|defects?|violations?)\b/i.test(message) || /\b(the|this|my|our) (model|building|report)\b/i.test(message);
 }
 
 const LlmDecision = z.discriminatedUnion("route", [
@@ -45,8 +62,7 @@ export async function supervise(
   input: { message: string; facts: ElementFacts[]; findings: FindingWithRule[] },
 ): Promise<Decision> {
   const elements = mentionedElements(input.message, input.facts, input.findings);
-  // "all issues" / "every finding": the whole report
-  const all = /\b(all|every)\b.*\b(issues?|findings?|problems?)\b/i.test(input.message);
+  const all = asksAboutReport(input.message);
   if (elements.length || all) {
     const list = elements.length ? elements : input.facts.filter((f) => input.findings.some((x) => x.finding.globalId === f.globalId));
     return { route: "finding", globalIds: list.map((f) => f.globalId), names: list.map((f) => f.name ?? f.globalId) };
