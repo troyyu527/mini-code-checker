@@ -20,6 +20,8 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      # SECURITY.md item 9: fail on known high or critical vulnerabilities in the dependencies
+      - run: npm audit --audit-level=high
       - run: npm run lint
       - run: npm test
       # the frontend build (lint already ran above, so not `npm run build`)
