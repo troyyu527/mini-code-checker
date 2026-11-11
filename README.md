@@ -1,5 +1,7 @@
 # Mini Code Checker
 
+[![ci](https://github.com/troyyu527/mini-code-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/troyyu527/mini-code-checker/actions/workflows/ci.yml)
+
 A small BIM model checker: it reads an IFC model, checks it with deterministic rules
 and shows the findings in a 3D viewer. An AI assistant answers questions about the
 findings and searches the building code text (RAG).
