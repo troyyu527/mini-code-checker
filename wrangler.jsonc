@@ -1,4 +1,6 @@
 // Cloudflare Worker config: the Mini Code Checker API.
+// Top level = local development (`wrangler dev`): Ollama and a local D1, no Cloudflare account needed.
+// env.production = the deployed Worker (`wrangler deploy --env production`): Workers AI, Vectorize, the real D1.
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "mini-code-checker",
@@ -16,10 +18,33 @@
     { "tag": "v1", "new_sqlite_classes": ["SessionAgent"] },
     { "tag": "v2", "new_sqlite_classes": ["BudgetGuard"] }
   ],
-  // lesson 39 replaces the zero id with the id that `wrangler d1 create` prints
+  // local only: the zero id keeps `wrangler dev` on the same local database as before
   "d1_databases": [{ "binding": "DB", "database_name": "mini-code-checker", "database_id": "00000000-0000-0000-0000-000000000000" }],
   "vars": {
     "ALLOWED_ORIGINS": "http://localhost:5173",
     "AI_PROVIDER": "ollama"
+  },
+  "env": {
+    "production": {
+      // keep the same Worker name (without this it would be "mini-code-checker-production")
+      "name": "mini-code-checker",
+      // bindings are not inherited by an environment: list them again
+      "durable_objects": {
+        "bindings": [
+          { "name": "SESSION", "class_name": "SessionAgent" },
+          { "name": "BUDGET", "class_name": "BudgetGuard" }
+        ]
+      },
+      // the id that `wrangler d1 create mini-code-checker` printed
+      "d1_databases": [{ "binding": "DB", "database_name": "mini-code-checker", "database_id": "d6ebcaba-2645-4257-8f03-528b2e5a63fa" }],
+      "ai": { "binding": "AI" },
+      "vectorize": [{ "binding": "CODE_INDEX", "index_name": "mini-code-index" }],
+      "observability": { "enabled": true },
+      "vars": {
+        // the GitHub Pages site (an origin has no path: not .../mini-code-checker/)
+        "ALLOWED_ORIGINS": "https://troyyu527.github.io",
+        "AI_PROVIDER": "workers-ai"
+      }
+    }
   }
 }

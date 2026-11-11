@@ -1,0 +1,16 @@
+// Offline jobs with --remote: the deployed Worker's D1, Vectorize index and Workers AI.
+// Only getPlatformProxy reads this file (server/cli/platform.ts); `wrangler deploy` uses ../../wrangler.jsonc.
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "mini-code-checker",
+  "main": "../main.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // "remote": true = talk to the real resource on Cloudflare, not a local copy
+  "d1_databases": [
+    { "binding": "DB", "database_name": "mini-code-checker", "database_id": "d6ebcaba-2645-4257-8f03-528b2e5a63fa", "remote": true }
+  ],
+  "ai": { "binding": "AI", "remote": true },
+  "vectorize": [{ "binding": "CODE_INDEX", "index_name": "mini-code-index", "remote": true }],
+  "vars": { "AI_PROVIDER": "workers-ai" }
+}
