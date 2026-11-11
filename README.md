@@ -4,6 +4,8 @@ A small BIM model checker: it reads an IFC model, checks it with deterministic r
 and shows the findings in a 3D viewer. An AI assistant answers questions about the
 findings and searches the building code text (RAG).
 
+Live: https://troyyu527.github.io/mini-code-checker/ (API: https://mini-code-checker.troy0527.workers.dev/api/health)
+
 ## Run it locally
 
 Needs Node.js 24 or newer and [Ollama](https://ollama.com) with the two models named in `.env.example`.

@@ -13,4 +13,4 @@ Run it before every deploy. "How to check" is a command or a place to look; writ
 | 7 | The prompt marks the visitor's message as data | `<message>` in the writer prompt; the injection messages of lesson 37 | |
 | 8 | Usage is limited | per session, per visitor (hashed IP), tokens per day (`readLimits`) | |
 | 9 | Dependencies have no known vulnerabilities | `npm audit` → 0 | |
-| 10 | Deployed (lesson 39): secrets are Worker secrets; CORS and limits work on the real URL; a forged `CF-Connecting-IP` header does not change the visitor | `wrangler secret list`; the curl tests of lesson 37 against the deployed URL | |
+| 10 | Deployed (lesson 39): secrets are Worker secrets; CORS and limits work on the real URL; a forged `CF-Connecting-IP` header does not change the visitor | `wrangler secret list --env production` (`[]`: AI, D1 and Vectorize are bindings, no keys); the curl tests of lesson 37 against the deployed URL. A client-sent `CF-Connecting-IP` is refused by Cloudflare (`403 error code: 1000`) before the Worker runs | 2026-11-11 |
