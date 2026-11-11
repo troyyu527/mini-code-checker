@@ -1,0 +1,28 @@
+# CI: every pull request (and every push to main) must pass the type check, the tests and both builds.
+# No secrets: nothing here talks to Cloudflare.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      # the frontend build (lint already ran above, so not `npm run build`)
+      - run: npx vite build
+      # the Worker build: bundles server/ and checks wrangler.jsonc, uploads nothing, needs no Cloudflare login
+      - run: npx wrangler deploy --env production --dry-run
