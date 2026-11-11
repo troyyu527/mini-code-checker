@@ -21,7 +21,7 @@ export interface Env {
   VISITOR_MESSAGE_LIMIT?: string;
 }
 
-export const VERSION = "0.1.0";
+export const VERSION = "0.2.0";
 
 export interface Config {
   version: string;

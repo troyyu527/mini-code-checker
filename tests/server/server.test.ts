@@ -14,7 +14,7 @@ describe("Worker routes", () => {
   it("health answers JSON", async () => {
     const res = await get("/api/health");
     expect(res.status).toBe(200);
-    expect(await res.json()).toEqual({ ok: true, version: "0.1.0" });
+    expect(await res.json()).toEqual({ ok: true, version: "0.2.0" });
   });
   it("unknown paths are 404", async () => {
     expect((await get("/api/nope")).status).toBe(404);
