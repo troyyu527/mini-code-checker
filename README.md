@@ -6,7 +6,7 @@ A small BIM model checker: it reads an IFC model, checks it with deterministic r
 and shows the findings in a 3D viewer. An AI assistant answers questions about the
 findings and searches the building code text (RAG).
 
-Live: https://troyyu527.github.io/mini-code-checker/ (API: https://mini-code-checker.troy0527.workers.dev/api/health)
+Retired on 2026-11-11 (lesson 41): the Worker, D1 database and Vectorize index were deleted and GitHub Pages was turned off. To run it again, follow lesson 39.
 
 ## Run it locally
 
