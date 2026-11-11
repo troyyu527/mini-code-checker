@@ -6,7 +6,7 @@ findings and searches the building code text (RAG).
 
 ## Run it locally
 
-Needs Node.js 24 and Ollama with the two models named in `.env.example`.
+Needs Node.js 24 and [Ollama](https://ollama.com) with the two models named in `.env.example`.
 
 ```powershell
 npm install
